@@ -9,7 +9,7 @@ spec:
   - matches:
       - path:
           type: PathPrefix
-          value: /
+          value: /hospital
     filters:
       - type: URLRewrite
         urlRewrite:
@@ -17,5 +17,5 @@ spec:
             type: ReplacePrefixMatch
             replacePrefixMatch: /
     backendRefs:
-      - name: fitness-tracker-service
+      - name: hospital-service
         port: 80
