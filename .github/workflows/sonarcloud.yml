@@ -66,6 +66,24 @@ jobs:
           # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
           projectBaseDir: .
 
+  Snyk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Snyk 
+        run: npm install -g snyk
+
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+      - name: Run Snyk test
+        run: snyk test
+
+      - name: Snyk Security Gate
+        run: snyk test --all-projects --severity-threshold=high
+
+  Slack:
+    steps:
       - name: Slack Notification
         if: always()
         run: |
@@ -89,18 +107,3 @@ jobs:
             ]
           }" \
           ${{ secrets.SLACK_WEBHOOK_URL }} 
-  Snyk:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install Snyk 
-        run: npm install -g snyk
-
-      - name: Authenticate Snyk
-        run: snyk auth ${{ secrets.SNYK_TOKEN }}
-
-      - name: Run Snyk test
-        run: snyk test
-
-      - name: Snyk Security Gate
-        run: snyk test --severity-threshold=high
