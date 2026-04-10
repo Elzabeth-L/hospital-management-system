@@ -43,6 +43,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Slack Notification
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+
+          if [ "$STATUS" == "success" ]; then
+            COLOR="good"
+            MSG="✅ SUCCESS"
+          else
+            COLOR="danger"
+            MSG="❌ FAILED"
+          fi
+
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{
+            \"attachments\": [
+              {
+                \"color\": \"$COLOR\",
+                \"text\": \"$MSG - ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nUser: ${{ github.actor }}\nCommit: ${{ github.sha }}\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+              }
+            ]
+          }" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
       - name: Analyze with SonarCloud
 
         # You can pin the exact commit or the version.
