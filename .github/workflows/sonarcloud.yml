@@ -55,8 +55,9 @@ jobs:
           args:
             # Unique keys of your project and organization. You can find them in SonarCloud > Information (bottom-left menu)
             # mandatory
-            -Dsonar.projectKey=
-            -Dsonar.organization=
+            -Dsonar.host.url=http://52.66.238.50:9000 \
+            -Dsonar.token=sqp_65bbbd0103796c6aa6ca5f558d571d35e95e9fe7 \
+            -Dsonar.projectKey=hospital-management
             # Comma-separated paths to directories containing main source files.
             #-Dsonar.sources= # optional, default is project base directory
             # Comma-separated paths to directories containing test source files.
