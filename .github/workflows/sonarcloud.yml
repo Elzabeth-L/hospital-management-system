@@ -71,6 +71,10 @@ jobs:
     needs: Analysis
     runs-on: ubuntu-latest
 
+    outputs:
+      total: ${{ steps.snyk_output.outputs.total }}
+      high: ${{ steps.snyk_output.outputs.high }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -129,21 +133,25 @@ jobs:
           TOTAL="${{ needs.Snyk.outputs.total }}"
           HIGH="${{ needs.Snyk.outputs.high }}"
 
+          # fallback if empty
+          TOTAL=${TOTAL:-0}
+          HIGH=${HIGH:-0}
+
           if [ "$STATUS" == "success" ]; then
             COLOR="good"
             MSG="✅ Pipeline SUCCESS"
           else
-            COLOR="danger"
+            COLOR="warning"
             MSG="⚠️ Pipeline Completed with Vulnerabilities"
           fi
 
-          curl -X POST -H 'Content-type: application/json' \
+          curl -X POST -H "Content-type: application/json" \
           --data "{
             \"attachments\": [
               {
                 \"color\": \"$COLOR\",
-                \"text\": \"$MSG\n\n🔐 Snyk Report:\nTotal Issues: $TOTAL\nHigh Severity: $HIGH\n\nRepo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+                \"text\": \"$MSG\n\n🔐 Snyk Report:\nTotal Issues: $TOTAL\nHigh Severity: $HIGH\n\nRepo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nTriggered by: ${{ github.actor }}\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
               }
             ]
           }" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          "${{ secrets.SLACK_WEBHOOK_URL }}"
