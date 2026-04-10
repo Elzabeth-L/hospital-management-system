@@ -81,8 +81,17 @@ jobs:
       - name: Authenticate Snyk
         run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk Security Gate
-        run: snyk test --all-projects
+      - name: Run Snyk Scan
+        run: snyk test --all-projects --json > snyk-report.json || true
+
+      - name: Parse Snyk Report
+        id: snyk
+        run: |
+          TOTAL=$(cat snyk-report.json | jq '.vulnerabilities | length')
+          HIGH=$(cat snyk-report.json | jq '[.vulnerabilities[] | select(.severity=="high")] | length')
+
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
 
   Slack:
     needs: [Analysis, Snyk]
@@ -111,3 +120,30 @@ jobs:
             ]
           }" \
           ${{ secrets.SLACK_WEBHOOK_URL }} 
+      
+      - name: Slack Snyk Notification
+        if: always()
+        run: |
+          STATUS="${{ needs.Snyk.result }}"
+
+          TOTAL="${{ needs.Snyk.outputs.total }}"
+          HIGH="${{ needs.Snyk.outputs.high }}"
+
+          if [ "$STATUS" == "success" ]; then
+            COLOR="good"
+            MSG="✅ Pipeline SUCCESS"
+          else
+            COLOR="danger"
+            MSG="⚠️ Pipeline Completed with Vulnerabilities"
+          fi
+
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{
+            \"attachments\": [
+              {
+                \"color\": \"$COLOR\",
+                \"text\": \"$MSG\n\n🔐 Snyk Report:\nTotal Issues: $TOTAL\nHigh Severity: $HIGH\n\nRepo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+              }
+            ]
+          }" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
